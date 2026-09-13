@@ -80,6 +80,8 @@ export function DocumentEditor(props: DocumentEditorProps) {
       if (props.kind === 'quote') await props.onSave({ ...createCommonDraft(), validUntil: endDate, status: status as QuoteStatus }, close);
       else await props.onSave({ ...createCommonDraft(), dueDate: endDate, status: status as InvoiceStatus, paidAmount: (initial as Invoice | undefined)?.paidAmount ?? 0, sourceQuoteId: (initial as Invoice | undefined)?.sourceQuoteId, orderId: (initial as Invoice | undefined)?.orderId }, close);
       setDirty(false);
+    } catch {
+      // Der AppContext hält den Editor geöffnet und zeigt die persistenzbezogene Fehlermeldung als Toast an.
     } finally { setSaving(false); }
   }
 

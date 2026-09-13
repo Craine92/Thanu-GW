@@ -52,6 +52,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => setToasts((current) => current.filter((toast) => toast.id !== id)), 3500);
   }, []);
 
+  const runDocumentMutation = useCallback(async <T,>(operation: () => Promise<T>, failureMessage: string): Promise<T> => {
+    try {
+      return await operation();
+    } catch (reason) {
+      console.error(failureMessage, reason);
+      notify(failureMessage, 'danger');
+      throw reason;
+    }
+  }, [notify]);
+
   const saveSettings = useCallback(async (settings: CompanySettings) => {
     await settingsRepository.save(settings);
     setData((current) => current ? { ...current, settings } : current);
@@ -80,54 +90,78 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const createQuote = useCallback(async (draft: QuoteDraft) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.createQuote(data, draft); setData(result.data);
-    notify(`Kostenvoranschlag ${result.entity.number} wurde gespeichert.`); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.createQuote(data, draft); setData(result.data);
+      notify(`Kostenvoranschlag ${result.entity.number} wurde gespeichert.`); return result.entity;
+    }, 'Kostenvoranschlag konnte nicht gespeichert werden.');
+  }, [data, notify, runDocumentMutation]);
   const updateQuote = useCallback(async (id: string, draft: QuoteDraft) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.updateQuote(data, id, draft); setData(result.data);
-    notify(`Kostenvoranschlag ${result.entity.number} wurde gespeichert.`); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.updateQuote(data, id, draft); setData(result.data);
+      notify(`Kostenvoranschlag ${result.entity.number} wurde gespeichert.`); return result.entity;
+    }, 'Kostenvoranschlag konnte nicht gespeichert werden.');
+  }, [data, notify, runDocumentMutation]);
   const deleteQuote = useCallback(async (id: string) => {
-    if (!data) return; setData(await erpService.deleteQuote(data, id)); notify('Kostenvoranschlag wurde gelöscht.');
-  }, [data, notify]);
+    if (!data) return;
+    return runDocumentMutation(async () => { setData(await erpService.deleteQuote(data, id)); notify('Kostenvoranschlag wurde gelöscht.'); }, 'Kostenvoranschlag konnte nicht gelöscht werden.');
+  }, [data, notify, runDocumentMutation]);
   const duplicateQuote = useCallback(async (id: string) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.duplicateQuote(data, id); setData(result.data); notify('Kostenvoranschlag wurde dupliziert.'); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.duplicateQuote(data, id); setData(result.data); notify('Kostenvoranschlag wurde dupliziert.'); return result.entity;
+    }, 'Kostenvoranschlag konnte nicht dupliziert werden.');
+  }, [data, notify, runDocumentMutation]);
   const setQuoteStatus = useCallback(async (id: string, status: QuoteStatus) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.setQuoteStatus(data, id, status); setData(result.data); notify(`Status von ${result.entity.number} wurde aktualisiert.`); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.setQuoteStatus(data, id, status); setData(result.data); notify(`Status von ${result.entity.number} wurde aktualisiert.`); return result.entity;
+    }, 'Status konnte nicht aktualisiert werden.');
+  }, [data, notify, runDocumentMutation]);
   const convertQuoteToInvoice = useCallback(async (id: string) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.convertQuoteToInvoice(data, id); setData(result.data);
-    if (!result.alreadyExisting) notify(`Rechnung ${result.entity.number} wurde erstellt.`);
-    return { invoice: result.entity, alreadyExisting: result.alreadyExisting };
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.convertQuoteToInvoice(data, id); setData(result.data);
+      if (!result.alreadyExisting) notify(`Rechnung ${result.entity.number} wurde erstellt.`);
+      return { invoice: result.entity, alreadyExisting: result.alreadyExisting };
+    }, 'Kostenvoranschlag konnte nicht in eine Rechnung umgewandelt werden.');
+  }, [data, notify, runDocumentMutation]);
   const createInvoice = useCallback(async (draft: InvoiceDraft) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.createInvoice(data, draft); setData(result.data); notify(`Rechnung ${result.entity.number} wurde gespeichert.`); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.createInvoice(data, draft); setData(result.data); notify(`Rechnung ${result.entity.number} wurde gespeichert.`); return result.entity;
+    }, 'Rechnung konnte nicht gespeichert werden.');
+  }, [data, notify, runDocumentMutation]);
   const updateInvoice = useCallback(async (id: string, draft: InvoiceDraft) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.updateInvoice(data, id, draft); setData(result.data); notify(`Rechnung ${result.entity.number} wurde gespeichert.`); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.updateInvoice(data, id, draft); setData(result.data); notify(`Rechnung ${result.entity.number} wurde gespeichert.`); return result.entity;
+    }, 'Rechnung konnte nicht gespeichert werden.');
+  }, [data, notify, runDocumentMutation]);
   const duplicateInvoice = useCallback(async (id: string) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.duplicateInvoice(data, id); setData(result.data); notify('Rechnung wurde dupliziert.'); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.duplicateInvoice(data, id); setData(result.data); notify('Rechnung wurde dupliziert.'); return result.entity;
+    }, 'Rechnung konnte nicht dupliziert werden.');
+  }, [data, notify, runDocumentMutation]);
   const setInvoiceStatus = useCallback(async (id: string, status: InvoiceStatus, paidAmount?: number) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.setInvoiceStatus(data, id, status, paidAmount); setData(result.data); notify(`Status von ${result.entity.number} wurde aktualisiert.`); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.setInvoiceStatus(data, id, status, paidAmount); setData(result.data); notify(`Status von ${result.entity.number} wurde aktualisiert.`); return result.entity;
+    }, 'Rechnungsstatus konnte nicht aktualisiert werden.');
+  }, [data, notify, runDocumentMutation]);
   const recordInvoicePayment = useCallback(async (id: string, amount: number) => {
     if (!data) throw new Error('Daten sind noch nicht geladen.');
-    const result = await erpService.recordInvoicePayment(data, id, amount); setData(result.data); notify(`Zahlung zu ${result.entity.number} wurde erfasst.`); return result.entity;
-  }, [data, notify]);
+    return runDocumentMutation(async () => {
+      const result = await erpService.recordInvoicePayment(data, id, amount); setData(result.data); notify(`Zahlung zu ${result.entity.number} wurde erfasst.`); return result.entity;
+    }, 'Zahlung konnte nicht erfasst werden.');
+  }, [data, notify, runDocumentMutation]);
   const removeOrCancelInvoice = useCallback(async (id: string) => {
-    if (!data) return; const invoice = data.invoices.find((item) => item.id === id); setData(await erpService.removeOrCancelInvoice(data, id)); notify(invoice?.status === 'draft' ? 'Rechnung wurde gelöscht.' : 'Rechnung wurde storniert.');
-  }, [data, notify]);
+    if (!data) return;
+    return runDocumentMutation(async () => {
+      const invoice = data.invoices.find((item) => item.id === id); setData(await erpService.removeOrCancelInvoice(data, id)); notify(invoice?.status === 'draft' ? 'Rechnung wurde gelöscht.' : 'Rechnung wurde storniert.');
+    }, 'Rechnung konnte nicht gelöscht oder storniert werden.');
+  }, [data, notify, runDocumentMutation]);
 
   const value = useMemo(() => ({ data, loading, error, toasts, notify, saveSettings, resetDemo, createCustomer, createTimeEntry, createQuote, updateQuote, deleteQuote, duplicateQuote, setQuoteStatus, convertQuoteToInvoice, createInvoice, updateInvoice, duplicateInvoice, setInvoiceStatus, recordInvoicePayment, removeOrCancelInvoice }), [data, loading, error, toasts, notify, saveSettings, resetDemo, createCustomer, createTimeEntry, createQuote, updateQuote, deleteQuote, duplicateQuote, setQuoteStatus, convertQuoteToInvoice, createInvoice, updateInvoice, duplicateInvoice, setInvoiceStatus, recordInvoicePayment, removeOrCancelInvoice]);
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

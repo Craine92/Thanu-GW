@@ -59,6 +59,14 @@ Codequalität prüfen:
 npm run lint
 ```
 
+## GitHub Pages
+
+Pushes auf `main` werden nach erfolgreichem Lint- und Produktions-Build automatisch über GitHub Actions veröffentlicht:
+
+<https://craine92.github.io/Thanu-GW/>
+
+Der Produktions-Build verwendet den Repository-Basispfad `/Thanu-GW/`. Eine mit ausgelieferte `404.html` stellt sicher, dass direkte Aufrufe und Reloads von Unterseiten mit dem `BrowserRouter` funktionieren.
+
 ## Demo-Daten
 
 Beim ersten Start werden automatisch folgende, untereinander verknüpfte Datensätze erzeugt:
