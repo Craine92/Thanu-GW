@@ -9,10 +9,10 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { TableToolbar } from '../components/ui/TableToolbar';
 import { useApp } from '../context/AppContext';
-import type { Customer, Employee, Invoice, Material, Order, Quote, StandardPosition, StockMovement, TimeEntry } from '../types/models';
+import type { Customer, Employee, Material, Order, StandardPosition, StockMovement, TimeEntry } from '../types/models';
 import { formatDate } from '../utils/date';
 import { formatCurrency } from '../utils/money';
-import { invoiceStatusLabels, orderStatusLabels, quoteStatusLabels } from '../utils/status';
+import { orderStatusLabels } from '../utils/status';
 
 function useListFilter<T>(items: T[], searchText: (item: T) => string, statusValue?: (item: T) => string) {
   const [query, setQuery] = useState('');
@@ -79,20 +79,6 @@ export function StandardPositionsPage() {
   return <div className="page"><PageHeader eyebrow="Stammdaten" title="Standardpositionen" description="Wiederkehrende Leistungen für schnelle und konsistente Belege." /><ListPanel {...filter} columns={columns} rowLabel={(row) => row.title} placeholder="Leistung, Code oder Kategorie …" /></div>;
 }
 
-export function QuotesPage() {
-  const { data: nullableData } = useApp(); const data = nullableData!;
-  const customer = (id: string) => data.customers.find((item) => item.id === id)?.name ?? '–';
-  const filter = useListFilter(data.quotes, (item) => `${item.number} ${item.title} ${customer(item.customerId)}`, (item) => item.status);
-  const columns: Column<Quote>[] = [
-    { key: 'number', label: 'Nummer', render: (item) => <strong className="record-number">{item.number}</strong>, sortValue: (item) => item.number },
-    { key: 'customer', label: 'Kunde', render: (item) => customer(item.customerId), sortValue: (item) => customer(item.customerId) },
-    { key: 'title', label: 'Bezeichnung', render: (item) => item.title }, { key: 'date', label: 'Datum', render: (item) => formatDate(item.issueDate), sortValue: (item) => item.issueDate },
-    { key: 'status', label: 'Status', render: (item) => <StatusBadge status={item.status} label={quoteStatusLabels[item.status]} /> },
-    { key: 'total', label: 'Betrag', render: (item) => formatCurrency(item.total, data.settings.currency), align: 'right', sortValue: (item) => item.total },
-  ];
-  return <div className="page"><PageHeader eyebrow="Verkauf" title="Kostenvoranschläge" description="Offerten erstellen, nachverfolgen und in Aufträge überführen." /><ListPanel {...filter} columns={columns} rowLabel={(row) => row.number} placeholder="Nummer, Kunde oder Bezeichnung …" options={Object.entries(quoteStatusLabels).map(([value, label]) => ({ value, label }))} /></div>;
-}
-
 export function OrdersPage() {
   const { data: nullableData } = useApp(); const data = nullableData!;
   const customer = (id: string) => data.customers.find((item) => item.id === id)?.name ?? '–';
@@ -106,21 +92,6 @@ export function OrdersPage() {
     { key: 'status', label: 'Status', render: (item) => <StatusBadge status={item.status} label={orderStatusLabels[item.status]} /> },
   ];
   return <div className="page"><PageHeader eyebrow="Verkauf" title="Aufträge" description="Einsätze planen, Mitarbeitende koordinieren und Fortschritt verfolgen." /><ListPanel {...filter} columns={columns} rowLabel={(row) => row.number} placeholder="Nummer, Kunde, Tätigkeit oder Mitarbeiter …" options={Object.entries(orderStatusLabels).map(([value, label]) => ({ value, label }))} /></div>;
-}
-
-export function InvoicesPage() {
-  const { data: nullableData } = useApp(); const data = nullableData!;
-  const customer = (id: string) => data.customers.find((item) => item.id === id)?.name ?? '–';
-  const filter = useListFilter(data.invoices, (item) => `${item.number} ${item.title} ${customer(item.customerId)}`, (item) => item.status);
-  const columns: Column<Invoice>[] = [
-    { key: 'number', label: 'Nummer', render: (item) => <strong className="record-number">{item.number}</strong>, sortValue: (item) => item.number },
-    { key: 'customer', label: 'Kunde', render: (item) => customer(item.customerId), sortValue: (item) => customer(item.customerId) },
-    { key: 'date', label: 'Rechnungsdatum', render: (item) => formatDate(item.issueDate), sortValue: (item) => item.issueDate },
-    { key: 'due', label: 'Fällig', render: (item) => <span className={item.status === 'overdue' ? 'text-danger' : ''}>{formatDate(item.dueDate)}</span>, sortValue: (item) => item.dueDate },
-    { key: 'status', label: 'Status', render: (item) => <StatusBadge status={item.status} label={invoiceStatusLabels[item.status]} /> },
-    { key: 'total', label: 'Betrag', render: (item) => formatCurrency(item.total, data.settings.currency), align: 'right', sortValue: (item) => item.total },
-  ];
-  return <div className="page"><PageHeader eyebrow="Verkauf" title="Rechnungen" description="Rechnungsstatus und offene Zahlungen zuverlässig im Blick behalten." /><ListPanel {...filter} columns={columns} rowLabel={(row) => row.number} placeholder="Nummer, Kunde oder Bezeichnung …" options={Object.entries(invoiceStatusLabels).map(([value, label]) => ({ value, label }))} /></div>;
 }
 
 export function TimeTrackingPage() {

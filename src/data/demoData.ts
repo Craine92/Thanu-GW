@@ -4,7 +4,10 @@ import type {
   StockMovement, TimeEntry,
 } from '../types/models';
 import { calculateTotal } from '../utils/money';
-import { shiftDays, today } from '../utils/date';
+import { shiftDays } from '../utils/date';
+import { customerSnapshot } from '../utils/documents';
+
+const today = new Date('2026-09-13T09:00:00');
 
 const customerNames = [
   'Meier Immobilien AG', 'Schneider & Partner GmbH', 'Familie Keller', 'Hotel Seeblick',
@@ -70,6 +73,7 @@ function makeItems(seed: number, tax = 8.1): DocumentItem[] {
   const prices = [148, 68, 235 + seed * 11, 112, 46];
   return itemDescriptions.slice(0, 3 + (seed % 3)).map((description, index) => ({
     id: `item-${seed}-${index}`,
+    itemType: index === 0 ? 'labor' as const : index === 1 ? 'flat' as const : 'custom' as const,
     description,
     quantity: index === 0 ? 2 + (seed % 7) * 0.5 : 1 + (seed % 3),
     unit: index === 0 ? 'Std.' : 'Pausch.',
@@ -109,16 +113,22 @@ function createEmployees(): Employee[] {
   }));
 }
 
-function createQuotes(): Quote[] {
+function createQuotes(customers: Customer[]): Quote[] {
   const statuses: QuoteStatus[] = ['sent', 'accepted', 'draft', 'accepted', 'rejected', 'sent', 'expired'];
   return Array.from({ length: 15 }, (_, index) => {
     const items = makeItems(index + 4);
+    const customerId = `customer-${(index * 2) % 25 + 1}`;
     return {
       id: `quote-${index + 1}`, number: `KV-2026-${String(index + 31).padStart(4, '0')}`,
-      customerId: `customer-${(index * 2) % 25 + 1}`, title: jobTitles[index % jobTitles.length],
+      customerId, customerSnapshot: customerSnapshot(customers.find((customer) => customer.id === customerId)!), title: jobTitles[index % jobTitles.length], currency: 'CHF',
       status: statuses[index % statuses.length], issueDate: shiftDays(today, -84 + index * 5),
       validUntil: shiftDays(today, -54 + index * 5), items, total: calculateTotal(items),
+      introduction: 'Vielen Dank für Ihre Anfrage. Gerne unterbreiten wir Ihnen folgenden Kostenvoranschlag.',
+      notes: index % 4 === 0 ? 'Ausführung nach gemeinsamer Terminvereinbarung.' : '',
+      closingText: 'Die Offerte ist 30 Tage gültig. Wir freuen uns auf Ihren Auftrag.',
+      convertedInvoiceId: index === 1 ? 'invoice-3' : undefined,
       createdAt: `${shiftDays(today, -84 + index * 5)}T09:20:00`,
+      updatedAt: `${shiftDays(today, -84 + index * 5)}T09:20:00`,
     };
   });
 }
@@ -138,19 +148,24 @@ function createOrders(customers: Customer[]): Order[] {
   });
 }
 
-function createInvoices(): Invoice[] {
+function createInvoices(customers: Customer[]): Invoice[] {
   const statuses: InvoiceStatus[] = ['sent', 'paid', 'overdue', 'paid', 'partial', 'draft', 'paid', 'overdue'];
   return Array.from({ length: 20 }, (_, index) => {
     const items = makeItems(index + 21);
     const issueOffset = -168 + index * 9;
     const status = statuses[index % statuses.length];
     const total = calculateTotal(items);
+    const customerId = index === 2 ? 'customer-3' : `customer-${(index * 3) % 25 + 1}`;
     return {
       id: `invoice-${index + 1}`, number: `RE-2026-${String(index + 42).padStart(4, '0')}`,
-      customerId: `customer-${(index * 3) % 25 + 1}`, orderId: index < 12 ? `order-${(index % 12) + 1}` : undefined,
-      title: jobTitles[index % jobTitles.length], status, issueDate: shiftDays(today, issueOffset),
+      customerId, customerSnapshot: customerSnapshot(customers.find((customer) => customer.id === customerId)!), orderId: index < 12 ? `order-${(index % 12) + 1}` : undefined,
+      title: jobTitles[index % jobTitles.length], currency: 'CHF', status, issueDate: shiftDays(today, issueOffset),
       dueDate: shiftDays(today, issueOffset + 30), paidAmount: status === 'paid' ? total : status === 'partial' ? total * 0.45 : 0,
       items, total, createdAt: `${shiftDays(today, issueOffset)}T14:15:00`,
+      introduction: 'Vielen Dank für Ihren Auftrag.', notes: '',
+      closingText: 'Zahlbar ohne Abzug innerhalb von 30 Tagen.',
+      sourceQuoteId: index === 2 ? 'quote-2' : undefined,
+      updatedAt: `${shiftDays(today, issueOffset)}T14:15:00`,
     };
   });
 }
@@ -225,8 +240,8 @@ export const defaultSettings: CompanySettings = {
 export function createDemoData(): AppData {
   const customers = createCustomers();
   return {
-    customers, employees: createEmployees(), quotes: createQuotes(), orders: createOrders(customers),
-    invoices: createInvoices(), materials: createMaterials(), stockMovements: createStockMovements(),
+    customers, employees: createEmployees(), quotes: createQuotes(customers), orders: createOrders(customers),
+    invoices: createInvoices(customers), materials: createMaterials(), stockMovements: createStockMovements(),
     standardPositions: createStandardPositions(), timeEntries: createTimeEntries(), activities: createActivities(),
     settings: structuredClone(defaultSettings),
   };

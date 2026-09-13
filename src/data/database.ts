@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { AppData } from '../types/models';
 import { createDemoData } from './demoData';
+import { APP_DATA_VERSION, normalizeAppData } from './migrations';
 
 type CollectionName = Exclude<keyof AppData, 'settings'>;
 
@@ -36,6 +37,7 @@ async function writeAll(data: AppData): Promise<void> {
   await Promise.all(keys.map((key) => collections.put({ key, value: data[key] } as never)));
   await transaction.objectStore('settings').put(data.settings, 'company');
   await transaction.objectStore('meta').put(true, 'seeded');
+  await transaction.objectStore('meta').put(APP_DATA_VERSION, 'dataVersion');
   await transaction.done;
 }
 
@@ -55,8 +57,11 @@ export const databaseService = {
     ];
     const values = await Promise.all(keys.map((key) => database.get('collections', key)));
     const settings = await database.get('settings', 'company');
-    const data = Object.fromEntries(values.map((entry, index) => [keys[index], entry?.value ?? []]));
-    return { ...data, settings } as AppData;
+    const data = { ...Object.fromEntries(values.map((entry, index) => [keys[index], entry?.value ?? []])), settings } as AppData;
+    const version = await database.get('meta', 'dataVersion');
+    const normalized = normalizeAppData(data);
+    if (version !== APP_DATA_VERSION) await writeAll(normalized);
+    return normalized;
   },
 
   async saveCollection<K extends CollectionName>(key: K, value: AppData[K]): Promise<void> {

@@ -3,6 +3,7 @@ import { Clock3 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { currentIsoDate } from '../../utils/date';
 
 export function CreateTimeEntryDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data, createTimeEntry } = useApp();
@@ -27,7 +28,7 @@ export function CreateTimeEntryDialog({ open, onClose }: { open: boolean; onClos
       <form className="form-grid" onSubmit={submit}>
         <label className="field"><span>Mitarbeiter</span><select name="employeeId" required>{data.employees.filter((employee) => employee.active).map((employee) => <option key={employee.id} value={employee.id}>{employee.name}</option>)}</select></label>
         <label className="field"><span>Auftrag</span><select name="orderId" required>{data.orders.filter((order) => !['completed', 'cancelled'].includes(order.status)).map((order) => <option key={order.id} value={order.id}>{order.number} · {order.title}</option>)}</select></label>
-        <label className="field"><span>Datum</span><input name="date" type="date" required defaultValue="2026-09-13" /></label>
+        <label className="field"><span>Datum</span><input name="date" type="date" required defaultValue={currentIsoDate()} /></label>
         <label className="field"><span>Stunden</span><input name="hours" type="number" min="0.25" max="24" step="0.25" defaultValue="2" required /></label>
         <label className="field field--full"><span>Tätigkeit</span><textarea name="description" required rows={3} defaultValue="Service- und Montagearbeiten" /></label>
         <label className="check-field field--full"><input type="checkbox" name="billable" defaultChecked /><span>Arbeitszeit ist verrechenbar</span></label>

@@ -1,4 +1,4 @@
-export const today = new Date('2026-09-13T09:00:00');
+export const today = new Date();
 
 export function isoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -8,6 +8,18 @@ export function shiftDays(base: Date, days: number): string {
   const date = new Date(base);
   date.setDate(date.getDate() + days);
   return isoDate(date);
+}
+
+export function addDays(value: string, days: number): string {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+export function currentIsoDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 export function formatDate(value: string, withTime = false): string {

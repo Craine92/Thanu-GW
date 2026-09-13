@@ -38,6 +38,7 @@ export interface Employee {
 
 export interface DocumentItem {
   id: string;
+  itemType: 'labor' | 'material' | 'flat' | 'custom';
   description: string;
   quantity: number;
   unit: string;
@@ -48,17 +49,44 @@ export interface DocumentItem {
   standardPositionId?: string;
 }
 
+export interface DocumentCustomerSnapshot {
+  number: string;
+  name: string;
+  contactPerson?: string;
+  email: string;
+  phone: string;
+  address: Address;
+}
+
+export interface DocumentContent {
+  customerId: string;
+  customerSnapshot: DocumentCustomerSnapshot;
+  title: string;
+  currency: CurrencyCode;
+  introduction: string;
+  notes: string;
+  closingText: string;
+  items: DocumentItem[];
+}
+
 export interface Quote {
   id: string;
   number: string;
   customerId: string;
   title: string;
+  customerSnapshot: DocumentCustomerSnapshot;
+  currency: CurrencyCode;
   status: QuoteStatus;
   issueDate: string;
   validUntil: string;
   items: DocumentItem[];
   total: number;
+  introduction: string;
+  notes: string;
+  closingText: string;
+  convertedInvoiceId?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Order {
@@ -81,14 +109,24 @@ export interface Invoice {
   customerId: string;
   orderId?: string;
   title: string;
+  customerSnapshot: DocumentCustomerSnapshot;
+  currency: CurrencyCode;
   status: InvoiceStatus;
   issueDate: string;
   dueDate: string;
   paidAmount: number;
   items: DocumentItem[];
   total: number;
+  introduction: string;
+  notes: string;
+  closingText: string;
+  sourceQuoteId?: string;
   createdAt: string;
+  updatedAt: string;
 }
+
+export type QuoteDraft = Omit<Quote, 'id' | 'number' | 'total' | 'createdAt' | 'updatedAt' | 'convertedInvoiceId'>;
+export type InvoiceDraft = Omit<Invoice, 'id' | 'number' | 'total' | 'createdAt' | 'updatedAt'>;
 
 export type InvoiceItem = DocumentItem;
 export type QuoteItem = DocumentItem;

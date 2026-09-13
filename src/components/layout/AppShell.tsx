@@ -44,12 +44,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'auto' }); }, [location.pathname]);
 
   const quickItems = [
     { label: 'Neuer Kunde', icon: Users, action: () => setCustomerOpen(true) },
-    { label: 'Neuer Kostenvoranschlag', icon: FileCheck2, action: () => navigate('/kostenvoranschlaege?neu=1') },
+    { label: 'Neuer Kostenvoranschlag', icon: FileCheck2, action: () => navigate('/kostenvoranschlaege/neu') },
     { label: 'Neuer Auftrag', icon: Wrench, action: () => navigate('/auftraege?neu=1') },
-    { label: 'Neue Rechnung', icon: ReceiptText, action: () => navigate('/rechnungen?neu=1') },
+    { label: 'Neue Rechnung', icon: ReceiptText, action: () => navigate('/rechnungen/neu') },
     { label: 'Zeit erfassen', icon: Clock3, action: () => setTimeOpen(true) },
   ];
 
@@ -65,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="app-main">
         <header className="topbar">
-          <div className="topbar__title"><button className="topbar__menu" onClick={() => setMobileOpen(true)} aria-label="Navigation öffnen"><Menu size={20} /></button><div><span>Arbeitsbereich</span><strong>{titleByPath[location.pathname] ?? 'Übersicht'}</strong></div></div>
+          <div className="topbar__title"><button className="topbar__menu" onClick={() => setMobileOpen(true)} aria-label="Navigation öffnen"><Menu size={20} /></button><div><span>Arbeitsbereich</span><strong>{titleByPath[location.pathname] ?? (location.pathname.startsWith('/kostenvoranschlaege') ? 'Kostenvoranschläge' : location.pathname.startsWith('/rechnungen') ? 'Rechnungen' : 'Übersicht')}</strong></div></div>
           <GlobalSearch />
           <div className="topbar__actions">
             <div className="quick-new" ref={menuRef}><button className="button button--primary" onClick={() => setNewOpen((value) => !value)}><Plus size={16} /><span>Neu</span><ChevronDown size={14} /></button>{newOpen && <div className="dropdown-menu dropdown-menu--new">{quickItems.map((item) => <button key={item.label} onClick={() => { item.action(); setNewOpen(false); }}><item.icon size={17} />{item.label}</button>)}</div>}</div>

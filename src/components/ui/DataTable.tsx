@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, ChevronRight, Copy, Eye, MoreHorizontal } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy, Eye, MoreHorizontal, type LucideIcon } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Button } from './Button';
 import { EmptyState } from './EmptyState';
@@ -12,7 +12,16 @@ export interface Column<T> {
   align?: 'left' | 'right';
 }
 
-export function DataTable<T extends { id: string }>({ columns, rows, pageSize = 8, rowLabel }: { columns: Column<T>[]; rows: T[]; pageSize?: number; rowLabel: (row: T) => string }) {
+export interface RowAction<T> {
+  label: string;
+  icon?: LucideIcon;
+  tone?: 'default' | 'danger';
+  hidden?: (row: T) => boolean;
+  disabled?: (row: T) => boolean;
+  onClick: (row: T) => void | Promise<unknown>;
+}
+
+export function DataTable<T extends { id: string }>({ columns, rows, pageSize = 8, rowLabel, actions }: { columns: Column<T>[]; rows: T[]; pageSize?: number; rowLabel: (row: T) => string; actions?: RowAction<T>[] }) {
   const [sortKey, setSortKey] = useState('');
   const [ascending, setAscending] = useState(true);
   const [page, setPage] = useState(0);
@@ -45,13 +54,18 @@ export function DataTable<T extends { id: string }>({ columns, rows, pageSize = 
     window.setTimeout(() => setCopied(null), 1500);
   }
 
+  const defaultActions: RowAction<T>[] = [
+    { label: 'Schnellansicht', icon: Eye, onClick: (row) => setSelected(row) },
+    { label: 'Bezeichnung kopieren', icon: copied ? Check : Copy, onClick: copyLabel },
+  ];
+
   if (!rows.length) return <EmptyState />;
   return (
     <>
       <div className="table-wrap">
         <table className="data-table">
           <thead><tr>{columns.map((column) => <th key={column.key} className={column.align === 'right' ? 'align-right' : ''}><button className={column.sortValue ? 'sortable' : ''} onClick={() => sort(column)}>{column.label}{sortKey === column.key && <span>{ascending ? '↑' : '↓'}</span>}</button></th>)}<th aria-label="Aktionen" /></tr></thead>
-          <tbody>{visible.map((row) => <tr key={row.id}>{columns.map((column) => <td key={column.key} className={column.align === 'right' ? 'align-right' : ''} data-label={column.label}>{column.render(row)}</td>)}<td className="row-action"><button className="icon-button" aria-label={`Aktionen für ${rowLabel(row)}`} title="Weitere Aktionen" onClick={() => setActionRow((current) => current === row.id ? null : row.id)}><MoreHorizontal size={18} /></button>{actionRow === row.id && <div className="row-menu"><button onClick={() => { setSelected(row); setActionRow(null); }}><Eye size={15}/>Schnellansicht</button><button onClick={() => copyLabel(row)}>{copied === row.id ? <Check size={15}/> : <Copy size={15}/>} {copied === row.id ? 'Kopiert' : 'Bezeichnung kopieren'}</button></div>}</td></tr>)}</tbody>
+          <tbody>{visible.map((row) => <tr key={row.id}>{columns.map((column) => <td key={column.key} className={column.align === 'right' ? 'align-right' : ''} data-label={column.label}>{column.render(row)}</td>)}<td className="row-action"><button className="icon-button" aria-label={`Aktionen für ${rowLabel(row)}`} title="Weitere Aktionen" onClick={() => setActionRow((current) => current === row.id ? null : row.id)}><MoreHorizontal size={18} /></button>{actionRow === row.id && <div className="row-menu">{(actions ?? defaultActions).filter((action) => !action.hidden?.(row)).map((action) => { const ActionIcon = action.icon; return <button key={action.label} className={action.tone === 'danger' ? 'row-menu__danger' : ''} disabled={action.disabled?.(row)} onClick={() => { void action.onClick(row); setActionRow(null); }}>{ActionIcon && <ActionIcon size={15}/>}<span>{action.label}</span></button>; })}</div>}</td></tr>)}</tbody>
         </table>
       </div>
       <div className="table-footer"><span>{sorted.length} Einträge</span><div><button className="icon-button" disabled={page === 0} onClick={() => setPage((value) => value - 1)} aria-label="Vorherige Seite"><ChevronLeft size={17} /></button><span>Seite {page + 1} von {maxPage + 1}</span><button className="icon-button" disabled={page >= maxPage} onClick={() => setPage((value) => value + 1)} aria-label="Nächste Seite"><ChevronRight size={17} /></button></div></div>

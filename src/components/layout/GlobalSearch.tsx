@@ -32,8 +32,8 @@ export function GlobalSearch() {
     const all: SearchResult[] = [
       ...data.customers.map((item) => ({ id: item.id, title: item.name, subtitle: `Kunde · ${item.number}`, path: `/kunden?highlight=${item.id}`, icon: Users })),
       ...data.employees.map((item) => ({ id: item.id, title: item.name, subtitle: `Mitarbeiter · ${item.role}`, path: `/mitarbeiter?highlight=${item.id}`, icon: UserRound })),
-      ...data.invoices.map((item) => ({ id: item.id, title: item.number, subtitle: `Rechnung · ${item.title}`, path: `/rechnungen?highlight=${item.id}`, icon: FileText })),
-      ...data.quotes.map((item) => ({ id: item.id, title: item.number, subtitle: `Kostenvoranschlag · ${item.title}`, path: `/kostenvoranschlaege?highlight=${item.id}`, icon: FileText })),
+      ...data.invoices.map((item) => ({ id: item.id, title: item.number, subtitle: `Rechnung · ${item.title}`, path: `/rechnungen/${item.id}`, icon: FileText })),
+      ...data.quotes.map((item) => ({ id: item.id, title: item.number, subtitle: `Kostenvoranschlag · ${item.title}`, path: `/kostenvoranschlaege/${item.id}`, icon: FileText })),
       ...data.orders.map((item) => ({ id: item.id, title: item.number, subtitle: `Auftrag · ${item.title}`, path: `/auftraege?highlight=${item.id}`, icon: Wrench })),
     ];
     return all.filter((item) => `${item.title} ${item.subtitle}`.toLocaleLowerCase('de').includes(needle)).slice(0, 8);

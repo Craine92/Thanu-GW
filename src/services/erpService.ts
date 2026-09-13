@@ -1,12 +1,14 @@
 import { databaseService } from '../data/database';
 import { activityRepository, customerRepository, timeEntryRepository } from '../data/repositories';
 import type { AppData, Customer, TimeEntry } from '../types/models';
+import { documentService } from './documentService';
 
 function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 export const erpService = {
+  ...documentService,
   load(): Promise<AppData> {
     return databaseService.load();
   },

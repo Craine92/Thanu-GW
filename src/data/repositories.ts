@@ -2,6 +2,7 @@ import type { AppData, CompanySettings } from '../types/models';
 import { databaseService } from './database';
 
 type CollectionName = Exclude<keyof AppData, 'settings'>;
+type Entity<K extends CollectionName> = AppData[K] extends Array<infer T> ? T : never;
 
 function createRepository<K extends CollectionName>(key: K) {
   return {
@@ -10,6 +11,20 @@ function createRepository<K extends CollectionName>(key: K) {
     },
     async saveAll(items: AppData[K]): Promise<void> {
       await databaseService.saveCollection(key, items);
+    },
+    async getById(id: string): Promise<Entity<K> | undefined> {
+      const items = await this.getAll() as unknown as Entity<K>[];
+      return items.find((item) => (item as { id: string }).id === id);
+    },
+    async save(item: Entity<K>): Promise<void> {
+      const items = await this.getAll() as unknown as Entity<K>[];
+      const index = items.findIndex((entry) => (entry as { id: string }).id === (item as { id: string }).id);
+      const next = index >= 0 ? items.map((entry, itemIndex) => itemIndex === index ? item : entry) : [item, ...items];
+      await databaseService.saveCollection(key, next as unknown as AppData[K]);
+    },
+    async delete(id: string): Promise<void> {
+      const items = await this.getAll() as unknown as Entity<K>[];
+      await databaseService.saveCollection(key, items.filter((item) => (item as { id: string }).id !== id) as unknown as AppData[K]);
     },
   };
 }
